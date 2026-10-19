@@ -165,9 +165,10 @@ characters:
 
 event:
 
-  # Model used to generate the scenario texts at intake time. This runs a handful
-  # of times per participant, so a stronger (slower) model is fine here.
-  effects_generator_model: "gpt-4.1"
+  # Model used to generate the scenario texts at intake time. This generates the stuff
+  # that guides the autocompletions. Since it's generated just once, a larger/slower model
+  # is fine in practice. 
+  effects_generator_model: "gpt-5.4"
 
   # ---------------------------------------------------------------------------
   # EXAMPLE 1 of 5 — the minimum viable event.
