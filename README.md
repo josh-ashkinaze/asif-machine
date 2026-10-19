@@ -15,6 +15,7 @@ The app records every suggestion, every accept, every reject, and the finished s
 - [Project layout](#project-layout)
 - [Configuration](#configuration)
 - [Writing your own scenario](#writing-your-own-scenario)
+- [Running the tests](#running-the-tests)
 - [Testing prompts without the app](#testing-prompts-without-the-app)
 - [Running a study](#running-a-study)
 - [Saving data](#saving-data)
@@ -140,6 +141,7 @@ templates/
   offline.html                  Maintenance page
 static/styles/                  CSS
 
+tests/test_app.py               Test suite (64 tests)
 tests/test_prompt.py            Interactive CLI for iterating on prompts
 
 Dockerfile          Container build
@@ -263,6 +265,21 @@ additional_fields:
 ### Iterating
 
 Edit `config.yaml`, restart the app, and resubmit the form. Flask's reloader picks up template and Python changes, but `AppConfig` reads `config.yaml` once at import, so a config change needs a restart. To read the generated scenario texts without clicking through the app, use the prompt testing CLI below.
+
+---
+
+## Running the tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest tests/test_app.py -q
+```
+
+64 tests covering the text-processing helpers (sentence splitting, de-duplication, word truncation), form construction from `additional_fields`, the routes, and the scenario-text selection logic.
+
+Two caveats. A handful of route tests submit a valid intake form, which runs the real generation pipeline, so the suite needs `OPENAI_API_KEY` and costs a few cents per run. One alerting test skips unless `SLACK_WEBHOOK_URL` is set.
+
+The route tests post to `example_1_minimal` and `example_5_split_context_and_date`. If you delete those example events from `config.yaml`, point the tests at your own event keys.
 
 ---
 
