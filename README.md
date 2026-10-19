@@ -27,6 +27,23 @@ The app records every suggestion, every accept, every reject, and the finished s
 
 ## How it works
 
+![The As If Machine: participant view and system view](docs/system_two_track.png)
+
+**Panel a, participant view.** The participant completes an intake form, then continues a scenario prompt the system built from their answers (orange outlines). Whenever they pause, the system suggests a continuation, which they accept with `Tab`.
+
+**Panel b, system view.** Four steps run once before writing begins. The system turns the intake answers into a text profile (1). The Initializer writes a personalized event onset, which becomes the visible prompt (2). The Predictor forecasts how the event would affect this participant (3). The Storyteller combines the onset and effects into a plot (4). During writing, the Autocompleter reads the profile, event, plot, and current text, and offers continuations (5).
+
+The figure names the agents; the code names their outputs. They line up like this:
+
+| Agent in the figure | Writes | Key in `config.yaml` | Prompt in `prompts.yaml` |
+|---|---|---|---|
+| Initializer | Onset | `start` | `start_of_event` |
+| Predictor | Effects | `effects` | `dynamic_effects` |
+| Storyteller | Plot | `plot`, `plot_from_effects` | `event_plot`, `event_plot_from_effects` |
+| Autocompleter | Suggestion | — | `chat_completion` |
+
+The "Event" the agents read is the `name` you write under `event:` in `config.yaml`. The "Profile" is the character description built from the intake answers.
+
 ### 1. Intake
 
 A participant lands on `/user_settings_experiment/<event_key>`, where `<event_key>` names an event in `config.yaml`. They answer the base questions (participant ID, age, gender, occupation, location) plus any extra questions that event defines.
