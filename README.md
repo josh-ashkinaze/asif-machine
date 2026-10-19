@@ -182,6 +182,8 @@ requirements.txt    Direct dependencies
 
 ## Writing your own scenario
 
+> **New to this?** Start with **[AIM_SCENARIO_GUIDE.pdf](docs/AIM_SCENARIO_GUIDE.pdf)** (8 pages). It walks through one scenario end to end — making it specific, choosing intake questions, and the complete YAML block — then hands you a set of scenario directions to borrow from.
+
 An event is one key under `event:` in `config.yaml`, reachable at `/user_settings_experiment/<that key>`. `config.yaml` ships with five commented examples, labeled `THESE ARE EXAMPLES`, ordered simplest to most complex. Each demonstrates a different feature:
 
 | Example | Demonstrates |
@@ -189,7 +191,7 @@ An event is one key under `event:` in `config.yaml`, reachable at `/user_setting
 | `example_1_minimal` | The minimum: `name` and nothing else |
 | `example_2_hidden_scenario` | `shown_to_user: none`, so the manipulation reaches the participant only through suggestions |
 | `example_3_tokens_and_custom_intake` | Custom intake questions, bracket tokens, validators, a custom heading and placeholder |
-| `example_4_overrides_and_hidden_fields` | Relabeling and hiding base intake fields |
+| `example_4_freetext_and_onset` | Free-text intake questions, and conditioning suggestions on the opening scene alone |
 | `example_5_split_context_and_date` | Showing the participant one scenario text while conditioning the model on another, and anchoring to today's date |
 
 Delete them and write your own.
@@ -257,21 +259,6 @@ additional_fields:
 ```
 
 `type` is any [WTForms field class](https://wtforms.readthedocs.io/en/3.0.x/fields/); `StringField`, `TextAreaField`, `IntegerField`, and `SelectField` cover most needs. `SelectField` requires `choices`, a flat list of strings. `validators` takes either a bare name (`"DataRequired"`) or a single-key mapping carrying arguments (`Length: { max: 70 }`).
-
-Three keys modify the base form instead of extending it:
-
-```yaml
-  # Relabel a field that already exists
-  prolific_id:
-    override_label: "Study ID"
-    override_placeholder: "Please enter your assigned participant ID"
-
-  # Replace a field with a hidden input holding a fixed value
-  location:
-    hidden_value: "Lisbon, Portugal"
-```
-
-`hidden_value` is how you pin every participant to the same location, employer, or circumstance while still getting that fact into the character description.
 
 ### Iterating
 

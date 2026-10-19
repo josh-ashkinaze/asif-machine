@@ -308,7 +308,7 @@ event:
   # and `autocomplete_context: "start"`, which conditions suggestions on the
   # opening scene only, keeping the model from racing ahead of the writer.
   # ---------------------------------------------------------------------------
-  example_4_overrides_and_hidden_fields:
+  example_4_freetext_and_onset:
     name: >
       You are a [gender] who works as [occupation]. You live in Lisbon, Portugal. A
       Category 4 storm is making landfall right now, water rising every hour.
