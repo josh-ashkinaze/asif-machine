@@ -1,0 +1,174 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap');
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+body {
+    background-color: #fafaf9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+    font-family: Georgia, serif;
+}
+
+.editor-container {
+    width: 60%;
+    max-width: 680px;
+    margin-top: 30px;
+    margin-left: auto;
+    margin-right: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    box-sizing: border-box;
+    animation: fadeIn 0.5s ease both;
+}
+
+/* ── Scenario card ────────────────────────── */
+.getting-started {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 10px;
+    background-color: #ffffff;
+    border-left: 3px solid #a8c4d8;
+    border-radius: 6px;
+    text-align: left;
+    font-size: 1rem;
+    color: #36454f;
+    line-height: 1.6;
+    box-shadow: 0 2px 8px rgba(100, 140, 170, 0.08);
+}
+
+/* ── Instructions ─────────────────────────── */
+.instructions {
+    width: 100%;
+    padding: 6px 0;
+    margin-bottom: 8px;
+    font-size: 0.82rem;
+    font-family: system-ui, -apple-system, sans-serif;
+    color: #8a96a4;
+    line-height: 1.5;
+}
+
+/* ── Editor ───────────────────────────────── */
+#editor {
+    width: 100%;
+    height: auto;
+    min-height: 80vh;
+    padding: 2em;
+    padding-bottom: 6em;
+    border: 1.5px solid #dce4ea;
+    font-size: 1.1rem;
+    font-family: Georgia, serif;
+    letter-spacing: 0.01em;
+    line-height: 2.0;
+    border-radius: 8px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 12px rgba(149, 128, 200, 0.07);
+    outline: none;
+    overflow-y: hidden;
+    transition: border-color 0.3s ease, box-shadow 0.4s ease;
+}
+
+#editor:focus {
+    border-color: #7aaac8;
+    box-shadow: 0 0 0 3px rgba(120, 170, 200, 0.12), 0 6px 28px rgba(100, 140, 170, 0.1);
+}
+
+#editor::selection {
+    background: rgba(100, 160, 200, 0.12);
+}
+
+/* ── Autocomplete suggestion ──────────────── */
+.suggestion {
+    font-style: italic;
+    color: #9580C8;
+    font-weight: 400;
+    opacity: 0;
+    transition: opacity 200ms ease-in;
+}
+
+.suggestion.visible {
+    opacity: 1;
+}
+
+/* ── Placeholder ──────────────────────────── */
+[contenteditable="true"]:empty:before {
+    content: attr(data-placeholder);
+    color: #8a96a4;
+    cursor: text;
+    font-style: italic;
+}
+
+/* ── Buttons ──────────────────────────────── */
+.button-row {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.btn-primary {
+    background-color: #b8cce0;
+    border: none;
+    padding: 10px 20px;
+    color: #2c3e4a;
+    font-size: 15px;
+    font-family: system-ui, -apple-system, sans-serif;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    flex: 1;
+    margin: 0 10px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.btn-primary:first-child { margin-left: 0; }
+.btn-primary:last-child  { margin-right: 0; }
+
+.btn-primary:hover {
+    background-color: #a0bcd0;
+    transform: translateY(-1px);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+/* ── Key icons ────────────────────────────── */
+.key-icon {
+    display: inline-flex;
+    align-items: center;
+    background-color: #f0eefa;
+    border: 1px solid #dcc7ff;
+    border-radius: 3px;
+    padding: 2px 5px;
+    margin: 0 2px;
+    font-size: 0.85em;
+    font-family: system-ui, monospace;
+    white-space: nowrap;
+    color: #7a6aaa;
+}
+
+.key-icon i { margin-right: 3px; }
+
+.info-emoji {
+    font-size: 1em;
+    margin-right: 8px;
+    color: #9580C8;
+}
+
+/* ── Responsive ───────────────────────────── */
+@media (max-width: 768px) {
+    .editor-container { width: 90%; }
+    .button-row { flex-direction: column; }
+    .btn-primary { margin: 10px 0; }
+    .instructions { font-size: 0.82rem; padding: 12px; }
+}

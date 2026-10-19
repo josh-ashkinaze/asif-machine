@@ -1,0 +1,240 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap');
+
+@keyframes backgroundMove {
+    0%, 100% { background-position: 0% 0%; }
+    50%       { background-position: 30% 30%; }
+}
+
+body {
+    font-family: system-ui, -apple-system, Arial, sans-serif;
+    background:
+        radial-gradient(ellipse at 28% 68%, rgba(255, 252, 225, 0.55), transparent 52%),
+        linear-gradient(124deg, #ffd1ba, #b2f9fc, #dcc7ff, #ffd1ba);
+    background-size: 100% 100%, 300% 300%;
+    animation: backgroundMove 35s ease-in-out infinite;
+    color: #36454f;
+    margin: 0;
+    padding: 48px 20px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+/* ── Card ─────────────────────────────────── */
+.container {
+    position: relative;
+    overflow: hidden;
+    background: #ffffff;
+    padding: 56px 60px;
+    border-radius: 12px;
+    border-top: 3px solid #dcc7ff;
+    box-shadow: 0 4px 40px rgba(149, 128, 200, 0.1), 0 1px 6px rgba(0, 0, 0, 0.04);
+    width: 100%;
+    max-width: 680px;
+}
+
+.container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-size: 160px;
+    z-index: 0;
+    border-radius: 12px;
+}
+
+/* ── Headings ─────────────────────────────── */
+h2 {
+    font-family: 'DM Serif Display', serif;
+    font-weight: 400;
+    font-size: 1.85rem;
+    color: #3d4f5c;
+    text-align: left;
+    margin-bottom: 12px;
+    line-height: 1.2;
+}
+
+h3 {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #7a6aaa;
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.lead {
+    font-size: 0.95rem;
+    color: #7a8a94;
+    margin-bottom: 32px;
+    line-height: 1.7;
+}
+
+/* ── Divider ──────────────────────────────── */
+.section-divider {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #dcc7ff, transparent);
+    margin: 2.5rem 0;
+}
+
+/* ── Form fields ──────────────────────────── */
+.form-group {
+    margin-bottom: 28px;
+    position: relative;
+}
+
+.form-control-label {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #7a8e98;
+    margin-bottom: 6px;
+    display: block;
+}
+
+/* Single-line inputs: underline only */
+input.form-control {
+    border: none;
+    border-bottom: 1px solid rgba(160, 185, 200, 0.5);
+    border-radius: 0;
+    background: transparent;
+    font-size: 15px;
+    padding: 7px 0;
+    width: 100%;
+    color: #36454f;
+    transition: border-color 0.4s ease, box-shadow 0.4s ease;
+    box-shadow: none;
+}
+
+input.form-control:focus {
+    border-bottom-color: #9580C8;
+    box-shadow: 0 6px 20px rgba(149, 128, 200, 0.1);
+    outline: none;
+    background: transparent;
+}
+
+/* Selects: match underline style */
+select.form-control {
+    border: none;
+    border-bottom: 1px solid rgba(160, 185, 200, 0.5);
+    border-radius: 0;
+    background: transparent;
+    font-size: 15px;
+    padding: 7px 0;
+    width: 100%;
+    color: #36454f;
+    transition: border-color 0.4s ease, box-shadow 0.4s ease;
+    box-shadow: none;
+    cursor: pointer;
+    appearance: none;
+}
+
+select.form-control:focus {
+    border-bottom-color: #9580C8;
+    box-shadow: 0 6px 20px rgba(149, 128, 200, 0.1);
+    outline: none;
+}
+
+/* Textarea: clearly writable */
+textarea.form-control {
+    border: 1.5px solid #b8ccd8;
+    border-radius: 8px;
+    background: #f4f8fb;
+    font-size: 15px;
+    padding: 12px 14px;
+    width: 100%;
+    height: 110px;
+    resize: vertical;
+    color: #36454f;
+    transition: border-color 0.4s ease, box-shadow 0.4s ease, background 0.4s ease;
+}
+
+textarea.form-control:focus {
+    border-color: #9580C8;
+    box-shadow: 0 0 0 3px rgba(149, 128, 200, 0.12), 0 8px 24px rgba(149, 128, 200, 0.1);
+    outline: none;
+    background: #ffffff;
+}
+
+.form-label {
+    position: absolute;
+    top: 12px;
+    left: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    color: #aaa;
+    background-color: transparent;
+}
+
+.form-control:focus + .form-label,
+.form-control:not(:placeholder-shown) + .form-label {
+    top: -10px;
+    left: 0;
+    font-size: 12px;
+    color: #a8c0cc;
+}
+
+/* ── Button ───────────────────────────────── */
+.btn-primary {
+    background-color: #dcc7ff;
+    border: none;
+    color: #36454f;
+    padding: 11px 36px;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: 10px;
+    width: auto;
+    min-width: 160px;
+    display: block;
+    margin-left: auto;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.btn-primary:hover {
+    background-color: #cdb3ff;
+    color: #36454f;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(149, 128, 200, 0.3);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+/* ── Errors ───────────────────────────────── */
+.text-danger {
+    font-size: 0.82rem;
+    color: #c0756a;
+    display: block;
+    margin-top: 4px;
+}
+
+/* ── Responsive ───────────────────────────── */
+@media (max-width: 768px) {
+    body {
+        padding: 24px 16px;
+    }
+
+    .container {
+        padding: 36px 28px;
+    }
+
+    h2 {
+        font-size: 1.65rem;
+    }
+}
+
+/* Gradient text utility */
+.gradient-text {
+    background: linear-gradient(45deg, #000080, #4B0082);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: bold;
+    font-size: 1.2em;
+}

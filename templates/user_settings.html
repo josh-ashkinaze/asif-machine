@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Writing Study</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="{{ url_for('static', filename='styles/user_setting.css') }}" rel="stylesheet"/>
+</head>
+<body>
+<div class="container">
+    <h2>Autocomplete as an Alternate "You"</h2>
+    <p class="lead">Use your imagination to explore life under different scenarios. An AI writer will help by suggesting
+        autocompletions to spark your imagination. Step into a different reality.</p>
+
+    <form id="form1" method="post" action="{{ url_for('user_settings') }}">
+        {{ character_form.hidden_tag() }} {{ event_form.hidden_tag() }}
+
+        <h3>About You</h3>
+        <p class="lead">The more detail you provide, the better the simulation.</p>
+
+        {% for field in character_form if field.name != 'csrf_token' and field.type != 'HiddenField' %}
+            <div class="form-group">
+                {{ field.label(class="form-control-label") }} {% if field.type == 'TextAreaField' %}
+                <textarea
+                        class="form-control"
+                        name="{{ field.name }}"
+                        placeholder="{{ field.render_kw.placeholder }}"
+                >
+{{ field._value() }}</textarea
+                >
+            {% else %} {{ field(class="form-control") }} {% endif %} {% if field.errors %}
+                <span class="text-danger">{{ field.errors|first }}</span>
+            {% endif %}
+            </div>
+        {% endfor %}
+        <hr class="section-divider"/>
+        <h3>What If This Happened</h3>
+        <p class="lead">Describe an event or scenario to drive the simulation.</p>
+
+        {% for field in event_form if field.name != 'csrf_token' %}
+            <div class="form-group">
+                {{ field.label(class="form-control-label") }} {% if field.type == 'TextAreaField' %}
+                <textarea
+                        class="form-control"
+                        name="{{ field.name }}"
+                        placeholder="{{ field.render_kw.placeholder }}"
+                >
+{{ field._value() }}</textarea
+                >
+            {% endif %} {% if field.errors %}
+                <span class="text-danger">{{ field.errors|first }}</span>
+            {% endif %}
+            </div>
+        {% endfor %}
+
+        <!-- Modified Submit Button with Spinner -->
+        <button type="submit" class="btn btn-primary" id="submit-button">
+					<span
+                            class="spinner-border spinner-border-sm"
+                            role="status"
+                            aria-hidden="true"
+                            style="display: none"
+                            id="spinner"
+                    ></span>
+            <span id="submit-button-text">Begin Your Story</span>
+        </button>
+    </form>
+</div>
+
+<script>
+    document.getElementById("form1").addEventListener("submit", function () {
+        document.getElementById("submit-button-text").textContent = "Loading the simulation..."; // Change button text
+        document.getElementById("spinner").style.display = "inline-block"; // Show spinner
+    });
+</script>
+</body>
+</html>

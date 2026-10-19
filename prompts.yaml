@@ -1,0 +1,107 @@
+#####################################
+# AGENTS
+#####################################
+
+start_of_event:
+  system: "You are a helpful, factual, and highly specific assistant."
+  user: |
+    INSTRUCTIONS
+    Given a description of a person, return a realistic scenario that would cause this person to experience {event_name}. Rely ONLY on what is in the description.
+    Be very specific and very realistic. Do not exaggerate. Aim for 100-130 words, but completing every sentence is more important than hitting the word count — never stop mid-sentence. Plan your pacing before writing. Only include details that matter to the story. Use natural, everyday language — avoid awkward or unnatural phrasing. DO NOT write about the effect of this event, but only focus on the scenario and how
+    that would make them experience {event_name}. Return one such event. Write in second person.
+    DESCRIPTION:
+    {character_description}
+
+event_plot:
+  system: "You are an expert creative writer."
+  user: |
+    INSTRUCTIONS
+    Given a description of a person, an event name, and how the event started, generate a highly specific and realistic plot. Do not contradict specific information mentioned in HOW THE EVENT STARTED. Be very specific and very realistic. Do not exaggerate. Ensure the plot has a cause-and-effect structure, with the event being the cause.
+    The plot should be interesting. Return one such plot in 50 words. Write in second person and do not repeat who the character is.
+    DESCRIPTION:
+    {character_description}
+    EVENT NAME:
+    {event_name}
+    HOW EVENT STARTED
+    {event_start}
+
+event_plot_from_effects:
+  system: "You are an expert creative writer."
+  user: |
+    INSTRUCTIONS
+    Given a description of a person, an event name, how the event started, and how the event would generally affect the person's life, generate a highly specific and realistic plot.  Do not contradict specific information mentioned in HOW THE EVENT STARTED. Be very specific and very realistic. Do not exaggerate. Ensure the plot has a cause-and-effect structure, with the event being the cause.
+    The plot should be interesting. Return one such plot in 100 words. Write in second person and do not repeat who the character is.
+    DESCRIPTION:
+    {character_description}
+    EVENT NAME:
+    {event_name}
+    EVENT EFFECTS:
+    {event_effects}
+    HOW EVENT STARTED
+    {event_start}
+
+dynamic_effects:
+  system: "You are a helpful, factual, and highly specific assistant."
+  user: |
+    INSTRUCTIONS
+    Given a description of a person, return an enumerated list of the likely effects of <start>{event_name}</end> on this person. 
+    Be very specific and very realistic. The effects can be related to any aspect of the person (their personality, demographics, hobbies, location etc.) but the effects must be concrete, realistic and specific. Do not exaggerate. Write 100 words.
+    DESCRIPTION:
+    {character_description}
+
+chat_completion:
+  event:
+    system: |
+      INSTRUCTIONS
+      A character is describing a day in their life. Finish a sentence as if you were the CHARACTER affected by EVENT.
+
+      CHARACTER
+      {character_description}
+      EVENT
+      {event}
+      EVENT EFFECTS
+      {event_effects}.
+
+      CONSTRAINTS
+      {event_constraints}
+    user: |
+      CONTEXT:{context}
+
+      INCOMPLETE SENTENCE:{incomplete_sentence}
+
+  non_event:
+    system: |
+      INSTRUCTIONS
+      A character is describing a day in their life. Finish a sentence as if you were the CHARACTER.
+
+      CHARACTER
+      {character_description}
+
+      CONSTRAINTS
+      {non_event_constraints}
+    user: |
+      CONTEXT:{context}
+
+      INCOMPLETE SENTENCE:{incomplete_sentence}
+
+
+#####################################
+# CONSTRAINTS
+#####################################
+
+# Note:
+# event_constraints are constraints that have {EVENT} in it
+# The constraints when event is relevant are {non_event_constraints} + {event_constraints}
+# The constraints when event is not relevant are {non_event_constraints}
+constraints:
+    - "Given the CONTEXT of what was written, finish the INCOMPLETE SENTENCE as the character."
+    - "SHOW, do not TELL, how the {EVENT} would affect the person's life. Describe surroundings and 
+      actions very specifically."
+    - "Let the reader infer the emotion from the character's actions and the events of the story, rather than stating it outright."
+    - "Make sure the story is coherent and each event leads to the next."
+    - "Use clear, plain, simple language that a very simple and plain person would use."
+    - "Write extremely literally. You are banned from using metaphors, similes, figurative language, flowery language, or any other literary devices."
+    - "Do not be cheesy, sentimental, or melodramatic. All writing should be very matter-of-fact."
+    - "Never encourage illegal or harmful behavior. And specifically: Do not engage in voter fraud, voter manipulation, voter suppression, illegal voting."
+    - "Do not include the incomplete sentence in your response."
+    - "Never repeat or paraphrase phrases that already appear in the CONTEXT. Do not re-describe objects, scenes, or actions already mentioned. Each completion must introduce a new action, detail, or event that moves the story forward."

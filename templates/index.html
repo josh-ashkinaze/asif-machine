@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Writing Study</title>
+    <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+            rel="stylesheet"
+    />
+
+    <link
+            href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+            rel="stylesheet"
+    />
+    <link href="{{ url_for('static', filename='styles/index.css') }}" rel="stylesheet"/>
+    <link href="{{ url_for('static', filename='styles/timer.css') }}" rel="stylesheet"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.19/lodash.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.16/d3.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <style>
+        .autocomplete-status {
+            position: sticky;
+            top: 12px;
+            z-index: 50;
+            margin: 8px 0;
+            padding: 4px 8px;
+            font-family: system-ui, -apple-system, sans-serif;
+            align-self: flex-start;
+            background-color: #fafaf9;
+            border-radius: 20px;
+            border: 1px solid #e4e8ec;
+            box-shadow: 0 1px 4px rgba(100, 130, 160, 0.08);
+        }
+
+        .indicator {
+            font-size: 13px;
+            font-weight: 400;
+            transition: all 0.3s ease;
+        }
+
+        .indicator.idle {
+            color: #5a6a78;
+        }
+
+        .indicator.listening {
+            color: #5a6a78;
+        }
+
+        .indicator.thinking {
+            color: #9580C8;
+            font-weight: 500;
+        }
+
+        .indicator.showing {
+            color: #9580C8;
+            font-weight: 500;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.55; }
+        }
+    </style>
+</head>
+
+<body>
+<input type="hidden" id="debounce_time" value="{{ debounce_time }}"/>
+<input type="hidden" id="min_sentences" value="{{ min_sentences }}"/>
+<input type="hidden" id="min_words" value="{{ min_words }}"/>
+
+<div class="editor-container">
+
+    {% if shown_to_user_preface != 'none' and shown_to_user_text != 'none' %}
+        <div class="getting-started">
+            <p><b>{{ shown_to_user_preface }}: </b>{{ shown_to_user_text }}</p>
+        </div>
+    {% endif %}
+
+    <div class="autocomplete-status">
+        <div id="autocomplete-indicator" class="indicator idle">
+            <i class="fas fa-pen"></i> Write your first sentence to begin
+        </div>
+    </div>
+
+    {% if lab_mode %}
+        <div class="lab-mode-controls" style="font-family: system-ui, -apple-system, sans-serif; font-size: 13px; color: #5a6a78; margin: 4px 0 8px; display: flex; align-items: center; gap: 8px;">
+            <label for="debounce-slider" style="margin: 0;">Lower means AI waits less before suggestion: <span id="debounce-slider-value" style="display: inline-block; min-width: 3.5ch; text-align: right; font-variant-numeric: tabular-nums;">{{ debounce_time }}</span>ms</label>
+            <input type="range" id="debounce-slider" min="0" max="1500" step="50" value="{{ debounce_time }}" style="width: 200px;"/>
+        </div>
+    {% endif %}
+
+    <div class="instructions">
+        <p style="margin: 0;">
+            <i class="fas fa-info-circle info-emoji"></i>
+            <b>How it works: </b>Write naturally and pause mid-sentence. The writing assistant will offer suggestions.
+            Accept with <span class="key-icon"><i class="fas fa-long-arrow-alt-left"></i>Tab</span>,
+            <span class="key-icon"><i class="fas fa-level-down-alt fa-rotate-90"></i>Enter</span>, or
+            <span class="key-icon"><i class="fas fa-arrow-right"></i>Right Arrow</span>.
+            Keep typing to ignore.
+        </p>
+    </div>
+
+
+    {% if experiment_enabled %}
+        <div class="timer"></div>
+        <span id="messageCompleted" style="display:none">{{ message|safe }}</span>
+        <span id="messageUnderMinWords" style="display:none">{{ message_under_min_words|safe }}</span>
+    {% endif %}
+
+
+    <div id="min-words-reminder" style="padding: 8px 12px; margin-bottom: 8px; background: #fff3cd; border-radius: 6px; font-size: 14px; color: #856404; transition: opacity 0.3s;">
+        <i class="fas fa-pencil-alt"></i> Please write at least <span id="min-words-count"></span> words.
+    </div>
+
+    <div
+            contenteditable="true"
+            data-placeholder="{{ editor_placeholder }}"
+            id="editor"
+            class="form-control"
+    ></div>
+
+    <div class="mt-4 text-center text-muted" style="font-size: 14px;">
+        <i class="fas fa-info-circle"></i>
+        Note: AI writing assistants can make mistakes.
+    </div>
+
+</div>
+
+{% if experiment_enabled %}
+    <!-- Outside .editor-container on purpose: that container has a fadeIn animation that
+         leaves a lingering `transform`, which turns `position: fixed` descendants into
+         `position: absolute` relative to it instead of the viewport. -->
+    <div
+            id="myAlert"
+            class="alert alert-warning alert-dismissible fade show"
+            role="alert"
+            style="display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1050; width: 90%; max-width: 600px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);"
+    >
+        <span id="myAlertMessage">{{ message|safe }}</span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+{% endif %}
+
+<!-- Bootstrap Modal -->
+<div
+        class="modal"
+        id="promptModal"
+        tabindex="-1"
+        role="dialog"
+        aria-labelledby="promptModalLabel"
+        aria-hidden="true"
+>
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="promptModalLabel">Random Prompt</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- The random prompt will be displayed here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    let suggestionTimeout;
+    var debounce_time = parseInt(document.getElementById('debounce_time').value);
+    var min_sentences = parseInt(document.getElementById('min_sentences').value);
+
+    const debounceSlider = document.getElementById('debounce-slider');
+    if (debounceSlider) {
+        debounceSlider.addEventListener('input', function() {
+            debounce_time = parseInt(this.value);
+            document.getElementById('debounce-slider-value').textContent = debounce_time;
+        });
+    }
+    var prompts = {{ stuck_prompts | tojson | safe }};
+    let autocompletesReceived = 0;
+    let autocompletesAccepted = 0;
+    let autocompletesRejected = 0;
+    let autocompleteHistory = [];
+    let suggestionShownAt = null;
+
+    const AutocompleteState = {
+        IDLE: 'idle',
+        LISTENING: 'listening',
+        THINKING: 'thinking',
+        SHOWING: 'showing'
+    };
+
+    let currentState = AutocompleteState.IDLE;
+
+    function updateIndicator(state) {
+        const indicator = document.getElementById('autocomplete-indicator');
+
+        switch(state) {
+            case AutocompleteState.IDLE:
+                indicator.className = 'indicator idle';
+                indicator.innerHTML = '<i class="fas fa-pen"></i> Keep writing...';
+                break;
+            case AutocompleteState.LISTENING:
+                indicator.className = 'indicator listening';
+                indicator.innerHTML = '<i class="fas fa-feather"></i> Pause mid-sentence for a suggestion';
+                break;
+            case AutocompleteState.THINKING:
+                indicator.className = 'indicator thinking';
+                indicator.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Thinking...';
+                break;
+            case AutocompleteState.SHOWING:
+                indicator.className = 'indicator showing';
+                indicator.innerHTML = '<i class="fas fa-check"></i> Suggestion ready — Tab, Enter, or → to accept';
+                break;
+        }
+        currentState = state;
+    }
+
+    function countWords(text) {
+        if (!text) return 0;
+        return text.trim().split(/\s+/).filter(function(w){ return w.length > 0; }).length;
+    }
+
+    function sendContextToServer(content) {
+        var minWordsThreshold = parseInt($('#min_words').val()) || 0;
+        var wc = countWords(content);
+        const journalData = {
+            content: content,
+            timestamp: new Date().toLocaleString('sv-SE', { timeZone: 'America/New_York', hour12: false }).replace(' ', 'T'),
+            event_id: eventId,
+            word_count: wc,
+            met_min_words: wc >= minWordsThreshold,
+            min_words_threshold: minWordsThreshold,
+            autocomplete_stats: {
+                received: autocompletesReceived,
+                accepted: autocompletesAccepted,
+                rejected: autocompletesRejected,
+                acceptance_rate: autocompletesReceived > 0 ?
+                    parseFloat((autocompletesAccepted / autocompletesReceived * 100).toFixed(2)) : 0
+            },
+            autocomplete_history: autocompleteHistory
+        };
+
+        $.ajax({
+            url: '/save_completed_journal',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(journalData),
+            success: function (response) {
+                console.log('Journal saved successfully:', response);
+            },
+            error: function (xhr, status, error) {
+                console.error('Error saving context:', status, error);
+            }
+        });
+    }
+
+    function returnToHome() {
+        window.location.href = '/';
+    }
+
+    function copyText() {
+        var textToCopy = "Here's a story I made with " + window.location.origin + "!\n\n" + document.getElementById('editor').innerText;
+        navigator.clipboard.writeText(textToCopy).then(function () {
+            Swal.fire({
+                title: 'Nice!',
+                text: 'Story copied to clipboard.',
+                icon: 'success',
+                confirmButtonText: 'Ok'
+            });
+        }).catch(function (error) {
+            Swal.fire({
+                title: 'Error!',
+                text: 'Could not copy the story.',
+                icon: 'error',
+                confirmButtonText: 'Ok'
+            });
+        });
+    }
+
+    function showRandomPrompt() {
+        var randomPrompt = prompts[Math.floor(Math.random() * prompts.length)];
+        $('#promptModal .modal-body').text(randomPrompt);
+        $('#promptModal').modal('show');
+    }
+
+    var eventId = '{{ session.get("event_id", "") }}';
+
+    $(document).ready(function () {
+        var editor = $('#editor');
+        editor.focus();
+        var minWords = parseInt($('#min_words').val()) || 0;
+        $('#min-words-count').text(minWords);
+        if (minWords <= 0) $('#min-words-reminder').hide();
+        var originalText = '';
+        var suggestion = '';
+        var suggestionAccepted = false;
+        var typingTimer;
+        var needsTypingBeforeSuggest = false;
+        let currentRequestId = 0;
+        let activeRequest = null;
+
+        function isMiddleOfSentence(text) {
+            const trimmed = text.trim();
+            if (trimmed.length === 0) return false;
+
+            const lastChars = trimmed.slice(-2);
+
+            if (/[.!?]\s*$/.test(lastChars)) return false;
+
+            const words = trimmed.split(/\s+/).filter(w => w.length > 0);
+            return words.length >= 5;
+        }
+
+        function countSentences(text) {
+            return (text.match(/[.!?]/g) || []).length;
+        }
+
+        function updateEditorText() {
+            editor.text(originalText);
+            if (suggestion && suggestion !== 'None') {
+                let displaySuggestion = suggestion;
+                if (!/\s/.test(originalText[originalText.length - 1]) && !/[!.,;?:]/.test(suggestion[0])) {
+                    displaySuggestion = ' ' + suggestion;
+                }
+                var suggestionElement = $('<span>').addClass('suggestion').text(displaySuggestion);
+                editor.append(suggestionElement);
+                setTimeout(function() { suggestionElement.addClass('visible'); }, 20);
+            }
+            placeCaretAtEnd(editor.get(0));
+        }
+
+        editor.on('input', function () {
+            originalText = $(this).text();
+            console.log(originalText);
+
+            if (minWords > 0) {
+                var wordCount = originalText.trim().split(/\s+/).filter(function(w){ return w.length > 0; }).length;
+                var reminder = $('#min-words-reminder');
+                if (wordCount >= minWords) {
+                    reminder.css('opacity', '0');
+                    setTimeout(function(){ reminder.hide(); }, 300);
+                } else {
+                    reminder.show().css('opacity', '1');
+                }
+            }
+
+            clearTimeout(typingTimer);
+
+            if (needsTypingBeforeSuggest) {
+                updateIndicator(AutocompleteState.IDLE);
+                return;
+            }
+
+            if (countSentences(originalText) < min_sentences) {
+                updateIndicator(AutocompleteState.IDLE);
+                return;
+            }
+
+            if (!isMiddleOfSentence(originalText)) {
+                updateIndicator(AutocompleteState.IDLE);
+                return;
+            }
+
+            updateIndicator(AutocompleteState.LISTENING);
+
+            typingTimer = setTimeout(function() {
+                triggerAutocomplete();
+            }, debounce_time);
+        });
+
+        function triggerAutocomplete() {
+            currentRequestId++;
+            const thisRequestId = currentRequestId;
+
+            if (activeRequest) {
+                activeRequest.abort();
+                activeRequest = null;
+            }
+
+            updateIndicator(AutocompleteState.THINKING);
+
+            activeRequest = $.ajax({
+                url: '/autocomplete',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({text: originalText}),
+                success: function (response) {
+                    if (thisRequestId !== currentRequestId) return;
+                    activeRequest = null;
+                    suggestion = response.completion || '';
+                    if (suggestion) {                         const lastEntry = autocompleteHistory.length > 0 ? autocompleteHistory[autocompleteHistory.length - 1] : null;
+                        if (lastEntry && lastEntry.status === 'pending') {
+                            lastEntry.suggestion_text = suggestion;
+                            lastEntry.timestamp = new Date().toLocaleString('sv-SE', { timeZone: 'America/New_York', hour12: false }).replace(' ', 'T');
+                            lastEntry.position_in_text = originalText.length;
+                            lastEntry.exposure_ms = null;
+                        } else {
+                            autocompletesReceived++;
+                            autocompleteHistory.push({
+                                timestamp: new Date().toLocaleString('sv-SE', { timeZone: 'America/New_York', hour12: false }).replace(' ', 'T'),
+                                suggestion_text: suggestion,
+                                status: 'pending',
+                                exposure_ms: null,
+                                position_in_text: originalText.length
+                            });
+                        }
+                        suggestionShownAt = Date.now();
+                        updateIndicator(AutocompleteState.SHOWING);
+                    } else {
+                        updateIndicator(AutocompleteState.LISTENING);
+                    }
+                    updateEditorText();
+                    suggestionAccepted = false;
+                },
+                error: function (xhr, status, error) {
+                    if (status === 'abort') return;
+                    activeRequest = null;
+                    console.error("Autocomplete error:", status, error);
+                    suggestion = '';
+                    updateIndicator(AutocompleteState.LISTENING);
+                    updateEditorText();
+                }
+            });
+        }
+
+        editor.on('keydown', function (e) {
+            if (needsTypingBeforeSuggest && e.key.length === 1 && /\S/.test(e.key)) {
+                needsTypingBeforeSuggest = false;
+            }
+
+            if (suggestion && (e.keyCode === 9 || e.keyCode === 13 || e.keyCode === 39)) {
+                e.preventDefault();
+                if (!/\s/.test(originalText[originalText.length - 1]) && !/[!.,;?:]/.test(suggestion[0])) {
+                    console.log("Last character is not a space and first character of suggestion is not a punctuation");
+                    originalText += ' ';
+                }
+                originalText += suggestion;
+
+                if (autocompleteHistory.length > 0) {
+                    autocompleteHistory[autocompleteHistory.length - 1].status = 'accepted';
+                    autocompleteHistory[autocompleteHistory.length - 1].exposure_ms = suggestionShownAt ? Date.now() - suggestionShownAt : null;
+                }
+                autocompletesAccepted++;
+
+                suggestion = '';
+                updateEditorText();
+                editor[0].scrollTo({ top: editor[0].scrollHeight, behavior: 'smooth' });
+                suggestionAccepted = true;
+                needsTypingBeforeSuggest = true;
+                updateIndicator(AutocompleteState.IDLE);
+            } else if (!suggestionAccepted && suggestion) {
+                if (autocompleteHistory.length > 0) {
+                    autocompleteHistory[autocompleteHistory.length - 1].status = 'rejected';
+                    autocompleteHistory[autocompleteHistory.length - 1].exposure_ms = suggestionShownAt ? Date.now() - suggestionShownAt : null;
+                }
+                autocompletesRejected++;
+
+                suggestionTimeout = setTimeout(function () {
+                    suggestion = '';
+                    updateEditorText();
+                }, 500);
+                suggestion = '';
+                updateEditorText();
+            }
+        });
+
+        function placeCaretAtEnd(el) {
+            el.focus();
+            var range = document.createRange();
+            range.selectNodeContents(el);
+            range.collapse(false);
+            var sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }
+    });
+
+
+    // TIMER COMPONENT
+    var width = 100,
+        height = 100,
+        timePassed = 0,
+        timeLimit = {{timer_minutes}} * 60;
+
+    var fields = [{
+        value: timeLimit,
+        size: timeLimit,
+        update: function () {
+            return timePassed = timePassed + 1;
+        }
+    }];
+
+    var nilArc = d3.svg.arc()
+        .innerRadius(width / 3 - 33)
+        .outerRadius(width / 3 - 33)
+        .startAngle(0)
+        .endAngle(2 * Math.PI);
+
+    var arc = d3.svg.arc()
+        .innerRadius(width / 3 - 13)
+        .outerRadius(width / 3 - 6)
+        .startAngle(0)
+        .endAngle(function (d) {
+            return ((d.value / d.size) * 2 * Math.PI);
+        });
+
+    var svg = d3.select(".timer").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    var field = svg.selectAll(".field")
+        .data(fields)
+        .enter().append("g")
+        .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")")
+        .attr("class", "field");
+
+    var back = field.append("path")
+        .attr("class", "path path--background")
+        .attr("d", arc);
+
+    var path = field.append("path")
+        .attr("class", "path path--foreground");
+
+    var label = field.append("text")
+        .attr("class", "label")
+        .attr("dy", ".35em");
+
+    function formatTime(seconds) {
+        var minutes = Math.floor(seconds / 60);
+        var remainingSeconds = seconds % 60;
+        return minutes + ":" + (remainingSeconds < 10 ? "0" : "") + remainingSeconds;
+    }
+
+    (function update() {
+        field
+            .each(function (d) {
+                d.previous = d.value;
+                d.value = d.update(timePassed);
+            });
+
+        path.transition()
+            .ease("elastic")
+            .duration(500)
+            .attrTween("d", arcTween);
+
+        if ((timeLimit - timePassed) <= 10)
+            pulseText();
+        else
+            label.text(function (d) {
+                return formatTime(d.size - d.value);
+            });
+
+        if (timePassed <= timeLimit)
+            setTimeout(update, 1000 - (timePassed % 1000));
+        else {
+            destroyTimer();
+            var finalText = document.getElementById('editor').innerText;
+            sendContextToServer(finalText);
+            document.querySelector('.editor-container').removeChild(document.querySelector('.timer'));
+            var minWordsThreshold = parseInt($('#min_words').val()) || 0;
+            var met = countWords(finalText) >= minWordsThreshold;
+            var msgEl = document.getElementById("myAlertMessage");
+            if (msgEl) {
+                msgEl.innerHTML = met
+                    ? document.getElementById("messageCompleted").innerHTML
+                    : document.getElementById("messageUnderMinWords").innerHTML;
+            }
+            document.getElementById("myAlert").style.display = "block";
+        }
+    })();
+
+    function pulseText() {
+        back.classed("pulse", true);
+        label.classed("pulse", true);
+
+        if ((timeLimit - timePassed) >= 0) {
+            label.style("font-size", "15px")
+                .attr("transform", "translate(0," + -5 + ")")
+                .text(function (d) {
+                    return formatTime(d.size - d.value);
+                });
+        }
+
+        label.transition()
+            .ease("elastic")
+            .duration(900)
+            .style("font-size", "15px")
+            .attr("transform", "translate(0," + 0 + ")");
+    }
+
+    function destroyTimer() {
+        label.transition()
+            .ease("back")
+            .duration(700)
+            .style("opacity", "0")
+            .style("font-size", "5")
+            .attr("transform", "translate(0," + -40 + ")")
+            .each("end", function () {
+                field.selectAll("text").remove()
+            });
+
+        path.transition()
+            .ease("back")
+            .duration(700)
+            .attr("d", nilArc);
+
+        back.transition()
+            .ease("back")
+            .duration(700)
+            .attr("d", nilArc)
+            .each("end", function () {
+                field.selectAll("path").remove()
+            });
+    }
+
+    function arcTween(b) {
+        var i = d3.interpolate({
+            value: b.previous
+        }, b);
+        return function (t) {
+            return arc(i(t));
+        };
+    }
+
+</script>
+</body>
+</html>
