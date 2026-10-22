@@ -142,7 +142,20 @@ requirements.txt    Direct dependencies
 
 **Meta settings**: `hardcode_character_and_event` skips the intake form entirely and builds the character from the `characters:` block, which is the fastest way to test a scenario on yourself. `default_experiment_event` sets where `/` sends people. `lab_mode` adds a live debounce slider to the editor for pilot sessions; keep it off for real participants. `app_is_offline` serves a maintenance page when deployed.
 
-**`llm`**: the model that writes suggestions, plus the temperature and token ranges each request samples from. Any model [LiteLLM](https://docs.litellm.ai/docs/providers) supports works, here and in `event.effects_generator_model`; set the provider's key in `.env` under the name LiteLLM expects (for example `GEMINI_API_KEY`). Switching to a model with `claude` in its name drops the frequency and presence penalties and clamps the temperature range to Anthropic's `[0, 1]`.
+**`llm`**: the model that writes suggestions, plus the temperature and token ranges each request samples from. Any model [LiteLLM](https://docs.litellm.ai/docs/providers) supports works, here and in `event.effects_generator_model` (see the table below). Switching to a model with `claude` in its name drops the frequency and presence penalties and clamps the temperature range to Anthropic's `[0, 1]`.
+
+To use another provider, set both models to its model names and put its key in `.env`:
+
+| Provider | Key in `.env` | Model names look like |
+|---|---|---|
+| OpenAI | `OPENAI_API_KEY` | `gpt-...` |
+| Anthropic | `ANTHROPIC_API_KEY` | `claude-...` |
+| Google Gemini | `GEMINI_API_KEY` | `gemini/...` |
+| Meta Llama | `LLAMA_API_KEY` | `meta_llama/...` |
+| DeepSeek | `DEEPSEEK_API_KEY` | `deepseek/...` |
+| Moonshot | `MOONSHOT_API_KEY` | `moonshot/...` |
+
+You only need the key for the provider you use. The app checks for the OpenAI and Anthropic keys at startup; for any other provider, a missing key shows up as an error on the first model call. LiteLLM's [provider list](https://docs.litellm.ai/docs/providers) has the rest.
 
 **`autocomplete`**: how long a pause triggers a suggestion, how much prior text the model sees, how many sentences the participant must write first, and the default `autocomplete_context` and `shown_to_user`.
 
