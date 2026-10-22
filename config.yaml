@@ -31,7 +31,10 @@ lab_mode: false
 ####################################
 
 llm:
-  # The model that writes the inline autocompletions. Any model LiteLLM supports.
+  # The model that writes the inline autocompletions. This and
+  # `event.effects_generator_model` can be any model LiteLLM supports
+  # (https://docs.litellm.ai/docs/providers); set that provider's API key in .env.
+  # The examples use OpenAI.
   model: "gpt-4.1-mini"
 
   # Each completion samples a temperature uniformly from [min, max] and a token
