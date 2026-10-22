@@ -6,26 +6,6 @@ A participant answers a few intake questions. The app turns those answers into a
 
 The app records every suggestion, every accept, every reject, and the finished story, which makes it usable as an experimental instrument: you can vary the scenario, vary how much of it the participant sees, and measure what they write.
 
----
-
-## Contents
-
-- [How it works](#how-it-works)
-- [Quickstart](#quickstart)
-- [Project layout](#project-layout)
-- [Configuration](#configuration)
-- [Writing your own scenario](#writing-your-own-scenario)
-- [Running the tests](#running-the-tests)
-- [Testing prompts without the app](#testing-prompts-without-the-app)
-- [Running a study](#running-a-study)
-- [Saving data](#saving-data)
-- [Deploying](#deploying)
-- [Troubleshooting](#troubleshooting)
-- [Costs](#costs)
-- [License](#license)
-
----
-
 ## How it works
 
 ![The As If Machine: participant view and system view](docs/system_two_track.png)
@@ -41,7 +21,7 @@ The figure names the agents; the code names their outputs. They line up like thi
 | Initializer | Onset | `start` | `start_of_event` |
 | Predictor | Effects | `effects` | `dynamic_effects` |
 | Storyteller | Plot | `plot`, `plot_from_effects` | `event_plot`, `event_plot_from_effects` |
-| Autocompleter | Suggestion | — | `chat_completion` |
+| Autocompleter | Suggestion | (none) | `chat_completion` |
 
 The "Event" the agents read is the `name` you write under `event:` in `config.yaml`. The "Profile" is the character description built from the intake answers.
 
@@ -71,7 +51,7 @@ Two settings decide what happens to these four texts:
 - **`autocomplete_context`** picks which one conditions the inline suggestions.
 - **`shown_to_user`** picks which one the participant reads above the editor, or `none` to show nothing.
 
-They are independent. Showing the participant a short `plot` while conditioning the model on `plot_from_effects` is a valid design, and so is showing them nothing at all, which confines the manipulation to the suggestions themselves.
+They are independent. Showing the participant a short `plot` while conditioning the autocompleter on `plot_from_effects` is a valid design, and so is showing them nothing at all, which confines the manipulation to the suggestions themselves.
 
 ### 3. Writing
 
@@ -81,11 +61,9 @@ Each request samples its own temperature and token budget from the ranges in `co
 
 When the timer expires the editor locks and the story posts to `/save_completed_journal`.
 
----
-
 ## Quickstart
 
-You need Python 3.11 or newer (tested on 3.12) and an OpenAI API key. Nothing else — no database, no accounts.
+You need Python 3.11 or newer (tested on 3.12) and an OpenAI API key. You don't need a database or any accounts.
 
 ```bash
 git clone https://github.com/josh-ashkinaze/asif-machine.git
@@ -118,8 +96,6 @@ http://localhost:5001/user_settings_experiment/example_3_tokens_and_custom_intak
 ```
 
 Without a MongoDB connection string the app prints `NO MONGO URL SET -- skipping save` and discards the data. Everything else works. See [Saving data](#saving-data) when you are ready to record.
-
----
 
 ## Project layout
 
@@ -160,33 +136,29 @@ requirements.txt    Direct dependencies
 | `/save_completed_journal` | `POST`. Writes the finished story and the suggestion log |
 | `/user_settings` | Intake form where the participant writes their own event. Useful for demos, unused in studies |
 
----
-
 ## Configuration
 
 `config.yaml` is the only file most people need to edit. It is commented throughout. The sections:
 
-**Meta settings** — `hardcode_character_and_event` skips the intake form entirely and builds the character from the `characters:` block, which is the fastest way to test a scenario on yourself. `default_experiment_event` sets where `/` sends people. `lab_mode` adds a live debounce slider to the editor for pilot sessions; keep it off for real participants. `app_is_offline` serves a maintenance page when deployed.
+**Meta settings**: `hardcode_character_and_event` skips the intake form entirely and builds the character from the `characters:` block, which is the fastest way to test a scenario on yourself. `default_experiment_event` sets where `/` sends people. `lab_mode` adds a live debounce slider to the editor for pilot sessions; keep it off for real participants. `app_is_offline` serves a maintenance page when deployed.
 
-**`llm`** — the model that writes suggestions, plus the temperature and token ranges each request samples from. Any model [LiteLLM](https://docs.litellm.ai/docs/providers) supports works. Switching to a model with `claude` in its name drops the frequency and presence penalties and clamps the temperature range to Anthropic's `[0, 1]`.
+**`llm`**: the model that writes suggestions, plus the temperature and token ranges each request samples from. Any model [LiteLLM](https://docs.litellm.ai/docs/providers) supports works. Switching to a model with `claude` in its name drops the frequency and presence penalties and clamps the temperature range to Anthropic's `[0, 1]`.
 
-**`autocomplete`** — timing and behavior: how long a pause triggers a suggestion, how much prior text the model sees, how many sentences the participant must write first, and the default `autocomplete_context` and `shown_to_user`.
+**`autocomplete`**: how long a pause triggers a suggestion, how much prior text the model sees, how many sentences the participant must write first, and the default `autocomplete_context` and `shown_to_user`.
 
-**`characters`** — hardcoded characters, used only when `hardcode_character_and_event: true`.
+**`characters`**: hardcoded characters, used only when `hardcode_character_and_event: true`.
 
-**`event`** — your scenarios. One key per experimental condition. See below.
+**`event`**: your scenarios. One key per experimental condition. See below.
 
-**`stuck_prompts`, `timer`, `editor_defaults`** — editor copy: the rotating hints, the time limit, the message shown when time runs out, and the default placeholder text.
+**`stuck_prompts`, `timer`, `editor_defaults`**: the rotating hints, the time limit, the message shown when time runs out, and the default placeholder text.
 
 `prompts.yaml` holds the prompts themselves: the four scenario generators, the two autocompletion prompts (one for event-conditioned suggestions, one for event-free), and the shared `constraints` list that forbids metaphor, sentimentality, and restating the context. Edit these to change the house style of the suggestions.
 
----
-
 ## Writing your own scenario
 
-> **New to this?** Start with **[AIM_SCENARIO_GUIDE.pdf](docs/AIM_SCENARIO_GUIDE.pdf)** (8 pages). It walks through one scenario end to end — making it specific, choosing intake questions, and the complete YAML block — then hands you a set of scenario directions to borrow from.
+> **New to this?** Start with **[AIM_SCENARIO_GUIDE.pdf](docs/AIM_SCENARIO_GUIDE.pdf)** (8 pages). It walks through one scenario end to end (making it specific, choosing intake questions, writing the YAML block), then gives you scenario ideas to borrow.
 
-An event is one key under `event:` in `config.yaml`, reachable at `/user_settings_experiment/<that key>`. `config.yaml` ships with five commented examples, labeled `THESE ARE EXAMPLES`, ordered simplest to most complex. Each demonstrates a different feature:
+An event is one key under `event:` in `config.yaml`, reachable at `/user_settings_experiment/<that key>`. `config.yaml` ships with five example events, ordered simplest to most complex. Each demonstrates a different feature:
 
 | Example | Demonstrates |
 |---|---|
@@ -194,7 +166,7 @@ An event is one key under `event:` in `config.yaml`, reachable at `/user_setting
 | `example_2_hidden_scenario` | `shown_to_user: none`, so the manipulation reaches the participant only through suggestions |
 | `example_3_tokens_and_custom_intake` | Custom intake questions, bracket tokens, validators, a custom heading and placeholder |
 | `example_4_freetext_and_onset` | Free-text intake questions, and conditioning suggestions on the opening scene alone |
-| `example_5_split_context_and_date` | Showing the participant one scenario text while conditioning the model on another, and anchoring to today's date |
+| `example_5_split_context_and_date` | Showing the participant one scenario text while conditioning the autocompleter on another, and anchoring to today's date |
 
 Delete them and write your own.
 
@@ -234,7 +206,7 @@ name: >
 
 ### Tip blocks
 
-A `[Tip: ...]` block inside `name` is stage direction for the model, not text the participant sees. Use it to set the shape of the story: what to open on, what to reveal and when, what to state once and never repeat, how to end. The examples in `config.yaml` number their beats and close with explicit prohibitions. Those prohibitions matter more than the instructions — "never name emotions, reveal them through action" and "no metaphors" do most of the work of keeping output readable.
+A `[Tip: ...]` block inside `name` is stage direction for the model, not text the participant sees. Use it to set the shape of the story: what to open on, what to reveal and when, what to state once and never repeat, how to end. The examples in `config.yaml` number their beats and close with explicit prohibitions. Those prohibitions matter more than the instructions: "never name emotions, reveal them through action" and "no metaphors" do most of the work of keeping output readable.
 
 ### Custom intake questions
 
@@ -266,8 +238,6 @@ additional_fields:
 
 Edit `config.yaml`, restart the app, and resubmit the form. Flask's reloader picks up template and Python changes, but `AppConfig` reads `config.yaml` once at import, so a config change needs a restart. To read the generated scenario texts without clicking through the app, use the prompt testing CLI below.
 
----
-
 ## Running the tests
 
 ```bash
@@ -281,8 +251,6 @@ Two caveats. A handful of route tests submit a valid intake form, which runs the
 
 The route tests post to `example_1_minimal` and `example_5_split_context_and_date`. If you delete those example events from `config.yaml`, point the tests at your own event keys.
 
----
-
 ## Testing prompts without the app
 
 `tests/test_prompt.py` runs the scenario-generation pipeline from the command line against any event and character in `config.yaml`, prints the exact prompts it sent, and reloads both YAML files on command. Use it when you are drafting a `name` block and want to see what the model makes of it.
@@ -293,8 +261,6 @@ python tests/test_prompt.py
 
 Type `help` for the commands, `reload` after editing a YAML file, and `quit` to exit.
 
----
-
 ## Running a study
 
 **Link participants to one event.** Send them to `/user_settings_experiment/<event_key>`, not to `/`. One event key per condition, one link per condition.
@@ -302,14 +268,12 @@ Type `help` for the commands, `reload` after editing a YAML file, and `quit` to 
 **Pass through a participant ID.** Append `?pid=...` to the link and the app stores it as `auto_pid`, independent of whatever the participant types into the form. Use your survey platform's piped ID:
 
 ```
-https://your-app.example.com/user_settings_experiment/my_event?pid=${e://Field/PROLIFIC_PID}
+https://[railwayname].up.railway.app/user_settings_experiment/my_event?pid=${e://Field/PROLIFIC_PID}
 ```
 
 **Hand back a completion code.** `timer.message_to_display_when_time_is_up` appears when time runs out, and `timer.message_when_under_min_words` appears instead if the participant wrote fewer than `autocomplete.min_words` words. Both accept HTML. Put your codes there; the shipped config has `REPLACE_WITH_YOUR_COMPLETION_CODE` placeholders.
 
 **Pilot before you launch.** Set `lab_mode: true` and run a few sessions yourself. The debounce slider lets you tune the pause threshold live, which is the single setting participants notice most. Turn it off before recruiting.
-
----
 
 ## Saving data
 
@@ -317,9 +281,9 @@ The app writes to MongoDB. Any connection string works, including a free [MongoD
 
 Everything goes into a database named `user`, in three collections:
 
-**`user-data`** — one document per intake submission: every form answer, the event key, the `auto_pid` if you passed one, and a session `uuid`.
+**`user-data`**: one document per intake submission, with every form answer, the event key, the `auto_pid` if you passed one, and a session `uuid`.
 
-**`journal-data`** — one document per finished story:
+**`journal-data`**: one document per finished story:
 
 | Field | Contents |
 |---|---|
@@ -331,7 +295,7 @@ Everything goes into a database named `user`, in three collections:
 | `autocomplete_context` | The scenario text the model was conditioned on |
 | `event_id` | The event key |
 
-**`error-log`** — model API failures, with the session `uuid`.
+**`error-log`**: model API failures, with the session `uuid`.
 
 To pull data back out, call `mongo_util.retrieve_database_data()`, which reads `MONGO_WORKING_STAGE_URL`, `MONGO_STAGING_URL`, or `MONGO_PRODUCTION_URL` depending on the branch name you pass, and filters by event key and date:
 
@@ -347,8 +311,6 @@ docs = mongo_util.retrieve_database_data(
 )
 ```
 
----
-
 ## Deploying
 
 The app ships a `Procfile` and a `Dockerfile`. It reads `PORT` from the environment, falling back to 5001, and switches to production mode (debug off) when `RAILWAY_ENVIRONMENT_NAME` is set.
@@ -358,7 +320,7 @@ The app ships a `Procfile` and a `Dockerfile`. It reads `PORT` from the environm
 1. Push this repository to GitHub.
 2. Create a project at [railway.app](https://railway.app) and point it at the repository. Railway detects the `Procfile`.
 3. Add the environment variables: `OPENAI_API_KEY`, `FLASK_SECRET_KEY`, and `MONGO_URL`. Give staging and production separate `MONGO_URL` values so pilot data never lands in your real dataset.
-4. Generate a public domain under Settings → Networking.
+4. Generate a public domain under Settings → Networking. Study links then look like `https://[railwayname].up.railway.app/user_settings_experiment/<event_key>`. If you run a separate staging service, it gets its own domain, such as `https://[railwayname]-staging.up.railway.app`.
 
 Set `FLASK_SECRET_KEY` to a fixed value in production. Without it the app generates a random key at startup, which invalidates every live session whenever the server restarts.
 
@@ -382,33 +344,27 @@ gunicorn -w 2 --timeout 120 -b 0.0.0.0:$PORT app:app
 
 Keep the timeout generous. Scenario generation makes several model calls before the editor loads, and a short timeout cuts participants off mid-intake.
 
----
-
 ## Troubleshooting
 
-**`OPENAI_API_KEY environment variable not set`** — `.env` is missing, sits outside the project root, or still holds the placeholder. The app only demands the key matching the model in `config.yaml`: a `gpt-` model needs `OPENAI_API_KEY`, a `claude` model needs `ANTHROPIC_API_KEY`.
+**`OPENAI_API_KEY environment variable not set`**: `.env` is missing, sits outside the project root, or still holds the placeholder. The app only demands the key matching the model in `config.yaml`: a `gpt-` model needs `OPENAI_API_KEY`, a `claude` model needs `ANTHROPIC_API_KEY`.
 
-**`Unknown event '...'`** — the event key in the URL has no match under `event:` in `config.yaml`. Check the spelling, and remember that renaming an event breaks any link already sent to participants.
+**`Unknown event '...'`**: the event key in the URL has no match under `event:` in `config.yaml`. Check the spelling, and remember that renaming an event breaks any link already sent to participants.
 
-**The intake form redirects back to itself** — a validator rejected an answer. The errors render under the offending fields.
+**The intake form redirects back to itself**: a validator rejected an answer. The errors render under the offending fields.
 
-**`/index` bounces to the intake form** — the session holds no scenario. Submit the intake form rather than visiting `/index` directly; this also happens after a restart that rotated a random `FLASK_SECRET_KEY`.
+**`/index` bounces to the intake form**: the session holds no scenario. Submit the intake form rather than visiting `/index` directly; this also happens after a restart that rotated a random `FLASK_SECRET_KEY`.
 
-**No suggestions appear** — the participant has not yet finished `autocomplete.min_sentences` sentences, or has not paused for `autocomplete.debounce_time` milliseconds. Check the browser console and the server log for model API errors.
+**No suggestions appear**: the participant has not yet finished `autocomplete.min_sentences` sentences, or has not paused for `autocomplete.debounce_time` milliseconds. Check the browser console and the server log for model API errors.
 
-**Suggestions repeat the sentence already written** — raise `llm.frequency_penalty` and `llm.presence_penalty`, or strengthen the last entry in the `constraints` list in `prompts.yaml`.
+**Suggestions repeat the sentence already written**: raise `llm.frequency_penalty` and `llm.presence_penalty`, or strengthen the last entry in the `constraints` list in `prompts.yaml`.
 
-**`NO MONGO URL SET -- skipping save`** — expected without a database. Set `MONGO_WORKING_STAGE_URL` (local) or `MONGO_URL` (deployed) to record data.
+**`NO MONGO URL SET -- skipping save`**: expected without a database. Set `MONGO_WORKING_STAGE_URL` (local) or `MONGO_URL` (deployed) to record data.
 
-**Changes to `config.yaml` do nothing** — restart the app. The config loads once at import.
-
----
+**Changes to `config.yaml` do nothing**: restart the app. The config loads once at import.
 
 ## Costs
 
 Each participant triggers four scenario-generation calls at intake, then one small call per pause while writing. A six-minute session runs to a few dozen short completions. Scenario generation dominates the bill, so `event.effects_generator_model` drives your cost far more than `llm.model` does. Price a pilot session before recruiting at scale.
-
----
 
 ## License
 
