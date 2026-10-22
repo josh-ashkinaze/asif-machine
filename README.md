@@ -63,7 +63,7 @@ When the timer expires the editor locks and the story posts to `/save_completed_
 
 ## Quickstart
 
-You need Python 3.11 or newer (tested on 3.12) and an OpenAI API key. You don't need a database or any accounts.
+You need Python 3.11 or newer (tested on 3.12) and an API key for a model provider. The examples use OpenAI, but both models in `config.yaml` can be anything [LiteLLM](https://docs.litellm.ai/docs/providers) supports. You don't need a database or any accounts.
 
 ```bash
 git clone https://github.com/josh-ashkinaze/asif-machine.git
@@ -142,7 +142,7 @@ requirements.txt    Direct dependencies
 
 **Meta settings**: `hardcode_character_and_event` skips the intake form entirely and builds the character from the `characters:` block, which is the fastest way to test a scenario on yourself. `default_experiment_event` sets where `/` sends people. `lab_mode` adds a live debounce slider to the editor for pilot sessions; keep it off for real participants. `app_is_offline` serves a maintenance page when deployed.
 
-**`llm`**: the model that writes suggestions, plus the temperature and token ranges each request samples from. Any model [LiteLLM](https://docs.litellm.ai/docs/providers) supports works. Switching to a model with `claude` in its name drops the frequency and presence penalties and clamps the temperature range to Anthropic's `[0, 1]`.
+**`llm`**: the model that writes suggestions, plus the temperature and token ranges each request samples from. Any model [LiteLLM](https://docs.litellm.ai/docs/providers) supports works, here and in `event.effects_generator_model`; set the provider's key in `.env` under the name LiteLLM expects (for example `GEMINI_API_KEY`). Switching to a model with `claude` in its name drops the frequency and presence penalties and clamps the temperature range to Anthropic's `[0, 1]`.
 
 **`autocomplete`**: how long a pause triggers a suggestion, how much prior text the model sees, how many sentences the participant must write first, and the default `autocomplete_context` and `shown_to_user`.
 
@@ -317,9 +317,9 @@ The app ships a `Procfile` and a `Dockerfile`. It reads `PORT` from the environm
 
 ### Railway
 
-1. Push this repository to GitHub.
-2. Create a project at [railway.app](https://railway.app) and point it at the repository. Railway detects the `Procfile`.
-3. Add the environment variables: `OPENAI_API_KEY`, `FLASK_SECRET_KEY`, and `MONGO_URL`. Give staging and production separate `MONGO_URL` values so pilot data never lands in your real dataset.
+1. Clone this repository.
+2. Create a project at [railway.app](https://railway.app) and deploy it, either with `railway up` from your clone or by connecting your own fork on GitHub. Railway detects the `Procfile`.
+3. Add the environment variables: `OPENAI_API_KEY` (or your provider's key), `FLASK_SECRET_KEY`, and `MONGO_URL`. Give staging and production separate `MONGO_URL` values so pilot data never lands in your real dataset.
 4. Generate a public domain under Settings → Networking. Study links then look like `https://[railwayname].up.railway.app/user_settings_experiment/<event_key>`. If you run a separate staging service, it gets its own domain, such as `https://[railwayname]-staging.up.railway.app`.
 
 Set `FLASK_SECRET_KEY` to a fixed value in production. Without it the app generates a random key at startup, which invalidates every live session whenever the server restarts.
@@ -361,10 +361,6 @@ Keep the timeout generous. Scenario generation makes several model calls before 
 **`NO MONGO URL SET -- skipping save`**: expected without a database. Set `MONGO_WORKING_STAGE_URL` (local) or `MONGO_URL` (deployed) to record data.
 
 **Changes to `config.yaml` do nothing**: restart the app. The config loads once at import.
-
-## Costs
-
-Each participant triggers four scenario-generation calls at intake, then one small call per pause while writing. A six-minute session runs to a few dozen short completions. Scenario generation dominates the bill, so `event.effects_generator_model` drives your cost far more than `llm.model` does. Price a pilot session before recruiting at scale.
 
 ## License
 
