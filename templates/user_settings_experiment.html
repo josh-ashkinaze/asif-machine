@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Writing Study</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='styles/user_setting.css') }}" rel="stylesheet"/>
+</head>
+<body>
+<div class="container">
+
+    <form method="post" action="{{ url_for('user_settings_experiment', experiment_key=experiment_key) }}" novalidate>
+        {{ character_form.hidden_tag() }}
+
+        <h3>About You</h3>
+        <p class="lead">The more detail you provide, the more accurate the writing assistant will be.</p>
+
+        {% for field in character_form if field.name != 'csrf_token' and field.type != 'HiddenField' %}
+            <div class="form-group">
+                {{ field.label(class="form-control-label") }}
+                {% if field.type == 'TextAreaField' %}
+                    <textarea
+                            class="form-control"
+                            name="{{ field.name }}"
+                            placeholder="{{ field.render_kw.placeholder }}"
+                    >{{ field._value() }}</textarea>
+                {% else %}
+                    {{ field(class="form-control") }}
+                {% endif %}
+                {% if field.errors %}
+                    <span class="text-danger">{{ field.errors|first }}</span>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary" id="submit-button">
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none;" id="spinner"></span>
+            <span id="submit-button-text">Begin Your Story</span>
+        </button>
+    </form>
+</div>
+
+<script>
+    document.getElementById('submit-button').addEventListener('click', function () {
+        document.getElementById('spinner').style.display = 'inline-block';
+        document.getElementById('submit-button-text').textContent = 'Loading...';
+    });
+</script>
+
+</body>
+</html>

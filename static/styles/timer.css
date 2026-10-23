@@ -1,0 +1,48 @@
+.timer {
+	position: sticky;
+	top: 12px;
+	z-index: 40;
+	margin: auto;
+	width: 100px;
+	height: 100px;
+}
+
+.timer::before {
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 72px;
+	height: 72px;
+	transform: translate(-50%, -50%);
+	background-color: #fafaf9;
+	border-radius: 50%;
+	box-shadow: 0 2px 8px rgba(100, 130, 160, 0.18);
+	z-index: -1;
+}
+
+.path--background {
+	fill: rgba(168, 196, 216, 0.35);
+	stroke: none;
+}
+
+.pulse {
+	fill: #9580C8 !important;
+}
+
+.path--foreground {
+	fill: rgba(149, 128, 200, 0.55);
+	stroke: none;
+}
+
+.label {
+	font-family: system-ui, -apple-system, sans-serif;
+	font-size: 15px;
+	font-weight: 500;
+	text-anchor: middle;
+	fill: #5a6a78;
+}
+
+.label.pulse {
+	fill: #9580C8;
+}

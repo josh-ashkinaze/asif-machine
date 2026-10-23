@@ -1,0 +1,371 @@
+####################################
+# Meta settings
+####################################
+
+# If true, read the character and event from this file (`hardcoded_character` and
+# `hardcoded_event` below) and skip the intake form. Useful for solo testing.
+# If false, show participants an intake form that builds the character from their answers.
+hardcode_character_and_event: false
+
+hardcoded_character: "example_character_rich"
+
+hardcoded_event: "example_3_tokens_and_custom_intake"
+
+# If true, `/` redirects to the intake form for `default_experiment_event` below.
+enable_experiment: true
+
+# Which event `/` redirects to when `enable_experiment` is true.
+# Any event key under `event:` works. You can also link participants straight to
+# /user_settings_experiment/<event_key> to run a different scenario.
+default_experiment_event: "example_1_minimal"
+
+# If true, show a maintenance page instead of the app (only when deployed)
+app_is_offline: false
+
+# If true, show a debounce-time slider on the editor page so the delay can be
+# hot-tuned live during a lab/pilot session. Keep false for real study participants.
+lab_mode: false
+
+####################################
+# Completion settings
+####################################
+
+llm:
+  # The model that writes the inline autocompletions. This and
+  # `event.effects_generator_model` can be any model LiteLLM supports
+  # (https://docs.litellm.ai/docs/providers); set that provider's API key in .env.
+  # The examples use OpenAI.
+  model: "gpt-4.1-mini"
+
+  # Each completion samples a temperature uniformly from [min, max] and a token
+  # budget uniformly from [max_tokens_min, max_tokens_max]. The jitter keeps
+  # suggestions from feeling repetitive.
+  temperature_min: 0.5
+  temperature_max: 1.2
+  max_tokens_min: 10
+  max_tokens_max: 30
+  max_attempts: 2
+  frequency_penalty: 1.2
+  presence_penalty: 0.8
+
+autocomplete:
+  # The context window (number of previous sentences) sent to the model
+  context_sentences: 15
+
+  # Debounce time (ms): how long the writer must pause before a suggestion is requested
+  debounce_time: 300
+
+  # Minimum minutes between Slack rate-limit alerts (per process)
+  alert_throttle_minutes: 3
+
+  # Minimum number of words before the "keep writing" reminder disappears
+  min_words: 20
+
+  # How many sentences the writer must finish before autocomplete turns on.
+  # Must be >= 1, because the model needs context for the sentence it is completing.
+  min_sentences: 1
+
+  # Proportion of suggestions that are conditioned on the event. Set below 1.0 to
+  # mix in event-free suggestions so the manipulation is less heavy-handed.
+  event_relevant: 1.0
+
+  # Which generated scenario text is sent to the autocomplete model.
+  # ['plot', 'effects', 'start', 'plot_from_effects']
+  autocomplete_context: "plot_from_effects"
+
+  # Which generated scenario text is shown to the writer above the editor.
+  # ['plot', 'effects', 'start', 'plot_from_effects', 'none']
+  shown_to_user: "plot"
+
+####################################
+# Example characters
+####################################
+
+# Only used when `hardcode_character_and_event: true`, which skips the intake
+# form. `age`, `gender`, `occupation` and `location` go into the opening
+# sentence; any other key becomes "My <key, underscores as spaces> is <value>."
+
+characters:
+
+  # The minimum set of fields.
+  example_character_minimal:
+    name: "Sam"
+    age: 26
+    gender: "Male"
+    occupation: "graduate student"
+    location: "Ann Arbor, Michigan"
+
+  # Extra keys become extra sentences, so you can hardcode what an intake form
+  # would collect. These answers match example_3 below.
+  example_character_rich:
+    name: "Dana"
+    age: 41
+    gender: "Female"
+    occupation: "hospital nurse"
+    location: "Toledo, Ohio"
+    hobbies: [ "gardening", "crossword puzzles", "long drives" ]
+    personality: "practical, blunt, hard to rattle"
+    household_income: "$60,000 - $80,000"
+    support_network: "two sisters in the same city"
+    state: "Ohio"
+    metro_type: "a suburb"
+    daily_dependency: "paying with a card or getting cash from an ATM"
+    cash_situation: "almost none"
+    person_to_reach: "a parent or older relative"
+    reason_to_reach: "making sure they have their medication"
+
+####################################
+# Example events
+####################################
+
+# Each key under `event:` is one condition, reachable at
+# /user_settings_experiment/<event_key>. The five examples go from simplest to
+# most complex. Replace them with your own scenarios.
+#
+# Keys an event may set:
+#
+#   name                  (required) The scenario text. This is the only required
+#                         key. It is sent to the model as the EVENT. Square-bracket
+#                         tokens like [state] are a writing convention, NOT string
+#                         interpolation: nothing substitutes them. They work because
+#                         the matching intake answer is already in the character
+#                         description ("My state is Ohio"), so the model resolves
+#                         them. A "[Tip: ...]" block is instructions for the model.
+#
+#   autocomplete_context  Which generated text conditions the autocompletions.
+#                         Overrides `autocomplete.autocomplete_context`.
+#                         'start'             how the event begins (~100-130 words)
+#                         'effects'           enumerated likely effects on this person
+#                         'plot'              a plot built from the start
+#                         'plot_from_effects' a plot built from the start AND effects
+#
+#   shown_to_user         Which generated text is displayed above the editor.
+#                         Same options plus 'none' to show nothing.
+#                         Overrides `autocomplete.shown_to_user`.
+#
+#   shown_to_user_prefix  Heading above the displayed text. Defaults to
+#                         "Imagine this is how it all starts" for 'start' and
+#                         "Imagine this is what happens" otherwise.
+#
+#   editor_placeholder    Placeholder text in the editor. Falls back to
+#                         `editor_defaults.editor_placeholder`.
+#
+#   add_current_date      If true, append today's date to the character
+#                         description. Use for scenarios tied to a real date.
+#
+#   additional_fields     Extra intake questions, appended to the base form
+#                         (participant ID, age, gender, occupation, location).
+#                         Every answer is folded into the character description.
+#
+# Note: all four scenario texts ('start', 'effects', 'plot', 'plot_from_effects')
+# are generated by the LLM at intake time, from `name` plus the character
+# description. There is no way to hand-write them in this file.
+
+event:
+
+  # Model used to generate the scenario texts at intake time. This generates the stuff
+  # that guides the autocompletions. Since it's generated just once, a larger/slower model
+  # is fine in practice. 
+  effects_generator_model: "gpt-5.4"
+
+  # 1. The minimum: just `name`. No extra intake questions, and it uses the
+  # global defaults for what the writer sees and what conditions suggestions.
+  example_1_minimal:
+    name: >
+      You win $50,000 in a state lottery drawing.
+
+  # 2. Hide the scenario. Nothing appears above the editor, so the scenario reaches
+  # the user only through the autocompleter, which is conditioned on `effects`.
+  example_2_hidden_scenario:
+    name: >
+      Your rent increases by 40% when your lease renews, and nothing comparable is
+      available nearby.
+      [Tip: Keep it concrete and ordinary. Show the character doing arithmetic,
+      cancelling small things, having one awkward conversation about money. Never
+      name an emotion -- reveal it through what they do. No metaphors.]
+    autocomplete_context: "effects"
+    shown_to_user: "none"
+    editor_placeholder: >
+      Write about a day in your life, starting with the morning. A writing assistant
+      will offer suggestions when you pause -- press tab to accept one, or keep
+      typing to ignore it.
+
+  # 3. Custom intake questions (string, select and integer fields, with
+  # validators) and bracket tokens in `name` that pick up those answers.
+  example_3_tokens_and_custom_intake:
+    name: >
+      You live in [metro_type] in [state]. A coordinated cyberattack breaches the
+      ground control systems of a major satellite network, disabling GPS-linked
+      services, satellite internet, and satellite-relayed communications across much
+      of the country. [daily_dependency] stops working without warning. Officials say
+      restoring service will take days, not hours.
+      [Tip: 1) THE FIRST HOURS: open on an ordinary day as [daily_dependency]
+      suddenly stops working. Ground it in the moment -- what they were doing, what
+      breaks first. Do not foreshadow. 2) THE CAUSE (state once): via a news alert,
+      reveal that attackers wiped a satellite ground station's systems, and that the
+      damage is wider than lost GPS, because the same satellites broadcast the timing
+      signals banks and power grids depend on. State this once and never repeat it.
+      3) DAY ONE: show [cash_situation] becoming a real constraint, and show them
+      failing to reach [person_to_reach] about [reason_to_reach]. Let the wider chaos
+      arrive only as overheard fragments. 4) THE UNRESOLVED STRETCH: move into days
+      two through five, with active adaptation and no fix. End on a complete sentence
+      with the disruption ongoing.
+      RULES: never name emotions -- reveal them through action; no metaphors; do not
+      let money alone solve it, since the systems themselves are down.]
+    autocomplete_context: "plot_from_effects"
+    shown_to_user: "start"
+    shown_to_user_prefix: "Imagine this is happening to you right now"
+    editor_placeholder: >
+      Something you rely on every day just stopped working, and it is not a normal
+      outage. Describe the first thing you notice, or the first thing you try. A
+      writing assistant will offer suggestions when you pause -- press tab to accept
+      or keep typing to ignore.
+    additional_fields:
+
+      state:
+        type: "StringField"
+        label: "What U.S. state do you live in?"
+        validators: [ "DataRequired" ]
+
+      metro_type:
+        type: "SelectField"
+        label: "Where do you live?"
+        choices: [ "a big city", "a suburb", "a small town", "a rural area" ]
+        validators: [ "DataRequired" ]
+
+      daily_dependency:
+        type: "SelectField"
+        label: "Which of these do you rely on most in a normal day?"
+        choices:
+          - "using GPS or a maps app to get somewhere"
+          - "paying with a card or getting cash from an ATM"
+          - "checking weather or traffic before heading out"
+          - "staying in touch with someone through my phone or the internet"
+        validators: [ "DataRequired" ]
+
+      cash_situation:
+        type: "SelectField"
+        label: "If card readers and ATMs stopped working for several days, how much cash would you have on hand?"
+        choices: [ "enough for several days", "enough for about a day", "almost none" ]
+        validators: [ "DataRequired" ]
+
+      person_to_reach:
+        type: "SelectField"
+        label: "Who would you most want to reach if phone and internet service became unreliable for days?"
+        choices:
+          - "a parent or older relative"
+          - "my partner or spouse"
+          - "my child or someone I care for"
+          - "a close friend"
+          - "a coworker or boss"
+        validators: [ "DataRequired" ]
+
+      reason_to_reach:
+        type: "StringField"
+        label: "What is something you would urgently need to coordinate with them about? Answer as a short phrase (e.g., 'making sure they have supplies', 'picking up my kids')."
+        validators:
+          - "DataRequired"
+          - Length: { max: 70 }
+
+      years_at_address:
+        type: "IntegerField"
+        label: "How many years have you lived at your current address?"
+        validators:
+          - "DataRequired"
+          - NumberRange: { min: 0, max: 100 }
+
+  # 4. Change the base form instead of adding to it: relabel a field, and hide
+  # `location` with a fixed value. Suggestions use only the opening scene.
+  example_4_freetext_and_onset:
+    name: >
+      You are a [gender] who works as [occupation]. You live in Lisbon, Portugal. A
+      Category 4 storm is making landfall right now, water rising every hour.
+      [Tip: Mix sensory detail (wind, water, sound) with the character's thoughts,
+      worries and memories -- neither should dominate. Let [environmental_concern]
+      surface as something concrete they can see. Have them try to reach
+      [important_people] and fail. Plain short sentences. Show emotion through action
+      and specific thought, never through labels like "scared" or "sad".]
+    autocomplete_context: "start"
+    shown_to_user: "start"
+    shown_to_user_prefix: "Imagine this is happening to you right now"
+    editor_placeholder: "Start writing about what you see and what you do first."
+    additional_fields:
+
+      # Relabel a field that already exists on the base form.
+      prolific_id:
+        override_label: "Study ID"
+        override_placeholder: "Please enter your assigned participant ID"
+
+      # Do not ask for location; fix it for everyone.
+      location:
+        hidden_value: "Lisbon, Portugal"
+
+      environmental_concern:
+        type: "TextAreaField"
+        label: "What is your greatest environmental concern? (For example: flooding, access to clean water, extreme heat, food security)"
+        validators: [ "DataRequired" ]
+
+      important_people:
+        type: "TextAreaField"
+        label: "Who matters most in your life (family, pets, close relationships)? Please describe briefly."
+        validators: [ "DataRequired" ]
+
+  # 5. Show the user one scenario text and the autocompleter another: the user
+  # reads a short plot, while the autocompleter is conditioned on the longer plot
+  # built from the start and the effects. Also adds today's date to the
+  # character description.
+  example_5_split_context_and_date:
+    name: >
+      It is election day, and you are going to vote in person at your local polling
+      place.
+      [Tip: Keep it to one ordinary day. Show the walk or drive, the line, the
+      building, the people working the table, the walk back. Do not name any real
+      candidate or party, and never write about fraud, intimidation or anything
+      illegal. No metaphors.]
+    autocomplete_context: "plot_from_effects"
+    shown_to_user: "plot"
+    shown_to_user_prefix: "Imagine this is what your day looks like"
+    add_current_date: true
+    additional_fields:
+
+      first_time_voting:
+        type: "SelectField"
+        label: "Is this the first time you will vote in person?"
+        choices: [ "Yes", "No" ]
+        validators: [ "DataRequired" ]
+
+      how_you_get_there:
+        type: "SelectField"
+        label: "How would you get to your polling place?"
+        choices: [ "walk", "drive myself", "get a ride", "public transit", "bike" ]
+        validators: [ "DataRequired" ]
+
+####################################
+# Editor UI
+####################################
+
+# Shown in a rotating hint when the writer stalls.
+stuck_prompts:
+  - "How did you start your day?"
+  - "What was the highlight of your day?"
+  - "What was the lowlight of your day?"
+  - "Did anything unexpected happen today?"
+  - "Choose one particular moment and describe it using five senses."
+  - "Write about a conversation you had."
+  - "Describe a quiet moment you had."
+  - "Describe a loud moment you had."
+  - "Describe a mundane task you did today."
+
+timer:
+  # How long the writer gets. The editor locks when the timer runs out.
+  minutes: 6
+
+  # HTML is allowed in both messages. If you are recruiting through a survey
+  # platform, this is where you hand back a completion code.
+  message_to_display_when_time_is_up: "Time's up! Please go back to the survey and: (1) enter your completion code <strong>REPLACE_WITH_YOUR_COMPLETION_CODE</strong>, and (2) copy-paste the story you wrote. (You're welcome to finish the last sentence if you'd like!)"
+
+  message_when_under_min_words: "Time's up! You did not reach the minimum word count. Please go back to the survey and: (1) enter your completion code <strong>REPLACE_WITH_YOUR_SHORT_RESPONSE_CODE</strong>, and (2) copy-paste what you wrote."
+
+editor_defaults:
+  # Used by any event that does not set its own `editor_placeholder`.
+  editor_placeholder: "Start typing about a day in your life. Then an AI writing assistant will help out. Press tab to accept suggestions or any other key to reject them. Some ways to start: 'I woke up and had breakfast. Then I [AI will autocomplete]'"
