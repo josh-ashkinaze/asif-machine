@@ -13,7 +13,7 @@ If you use the As-If Machine in your research, please cite our paper:
 **The As-If Machine: Personalized counterfactuals make distant policy risks feel close.** [Read the preprint](https://www.researchgate.net/publication/416710869_The_As-If_Machine_Personalized_counterfactuals_make_distant_policy_risks_feel_close).
 
 ```bibtex
-@unpublished{ashkinaze2026asif,
+@article{ashkinaze2026asif,
   title = {The As-If Machine: Personalized counterfactuals make distant policy risks feel close},
   author = {Ashkinaze, Joshua and Zhou, Yubo and Chen, Pengyu and Bhattacharya, Avi and Park, Hyebin and Zhang, Yanman and Preston, Stephanie and Gilbert, Eric and Budak, Ceren},
   year = {2026},
