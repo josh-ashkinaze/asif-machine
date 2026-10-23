@@ -10,7 +10,9 @@ To design a scenario, start with the [scenario guide](docs/AIM_SCENARIO_GUIDE.pd
 
 ![The As If Machine: participant view and system view](docs/system_two_track.png)
 
-Before writing starts, the app turns the intake answers into a profile. One agent writes how the event begins for this person (`start`), another predicts its effects (`effects`), and a third builds a plot from those (`plot`, or `plot_from_effects` when it also uses the effects). While the participant writes, the autocompleter reads the profile, the event, the plot and the text so far, and suggests a continuation. `Tab` accepts it.
+Panel a shows what the participant sees. They fill out an intake form, then continue a scenario prompt the system built from their answers (orange outlines mark details taken from the intake). Whenever they pause, the system suggests a continuation, which they accept with `Tab` or ignore by typing.
+
+Panel b shows what the system does. Four steps run once, before writing begins. The system turns the intake answers into a text profile (1). The Initializer writes how the event begins for this person, which becomes the prompt above the editor (2; `start` in the code). The Predictor forecasts how the event would affect them (3; `effects`). The Storyteller combines the onset and the effects into a plot (4; `plot` or `plot_from_effects`). While the participant writes, the Autocompleter reads the profile, the event, the plot and the text so far, and suggests the rest of the sentence at every pause (5).
 
 Two settings in `config.yaml` control the design. `shown_to_user` picks which generated text the participant reads above the editor (or `none`), and `autocomplete_context` picks which one the autocompleter is conditioned on. They are independent, so you can show a short plot while conditioning suggestions on the longer one, or show nothing and let the scenario reach the participant only through the suggestions.
 
